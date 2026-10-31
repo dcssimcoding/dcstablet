@@ -1,0 +1,11 @@
+{
+  "port": 8090,
+  "fps": 30,
+  "size": 512,
+  "capture_backend": "wgc",
+  "capture_monitor_index": 2,
+  "capture_monitor_device": "\\\\.\\DISPLAY2",
+  "capture_monitor_rect": {"left": 1920, "top": 0, "width": 1024, "height": 512},
+  "left": {"left": 1920, "top": 0, "width": 512, "height": 512},
+  "right": {"left": 2432, "top": 0, "width": 512, "height": 512}
+}

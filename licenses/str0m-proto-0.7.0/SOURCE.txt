@@ -1,0 +1,2 @@
+https://raw.githubusercontent.com/algesten/str0m/9b159720be773693dd561dec0fb20c6d7e4aa323/LICENSE-MIT.txt
+Source commit from the crate .cargo_vcs_info.json.

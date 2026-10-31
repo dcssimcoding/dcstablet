@@ -1,0 +1,95 @@
+name: Windows checks
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lua:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y lua5.1
+      - run: lua5.1 tests/controls_bridge.lua
+  windows:
+    runs-on: windows-latest
+    env:
+      DCS_TABLET_BROWSER_CHANNEL: chrome
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust tools
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Remap private build paths
+        shell: pwsh
+        run: .\scripts\Set-PrivateBuild.ps1
+      - run: python -m unittest discover -s tests -p "release_privacy_test.py"
+      - run: python -m pip install -r requirements-docs.txt
+      - run: python scripts/Build-Guide.py --check
+      - name: Enable Windows media components
+        shell: pwsh
+        run: |
+          $feature = Get-WindowsFeature Server-Media-Foundation -ErrorAction SilentlyContinue
+          if ($feature -and -not $feature.Installed) {
+            $result = Install-WindowsFeature Server-Media-Foundation
+            if (-not $result.Success -or $result.RestartNeeded -eq 'Yes') { throw 'Media Foundation requires an available desktop media component without a pending reboot.' }
+          }
+      - uses: actions/cache/restore@v4
+        id: rust-cache
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-rust-private-v2-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-rust-private-v2-
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+      - run: cargo test --locked --features test-hooks
+      - run: cargo build --release --locked
+      - name: Allow local WebRTC on the isolated test runner
+        shell: pwsh
+        run: |
+          foreach ($configuration in @('release','debug')) {
+            $program = Join-Path $PWD "target\$configuration\dcs-tablet.exe"
+            New-NetFirewallRule -DisplayName "DCS Tablet CI $configuration" -Direction Inbound -Action Allow -Program $program -Profile Any -RemoteAddress LocalSubnet,127.0.0.0/8 | Out-Null
+          }
+      - run: node --test tests/frontend_recovery.test.cjs tests/frontend_lifecycle.test.cjs tests/http_limits.test.cjs
+      - run: node tests/check_frontend.cjs
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install chrome webkit
+      - run: node tests/browser-smoke.cjs
+      - run: cargo build --locked --features test-hooks
+      - run: node tests/failure_recovery.cjs
+      - run: .\tests\package_guards.ps1
+      - run: .\tests\launcher_logging.ps1
+      - uses: actions/cache/save@v4
+        if: always() && steps.rust-cache.outputs.cache-primary-key != '' && steps.rust-cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ steps.rust-cache.outputs.cache-primary-key }}
+      - name: Package Windows artifact
+        run: .\scripts\Package.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dcs-tablet-windows-x64
+          path: |
+            dist/*.zip
+            dist/*.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results
+          path: test-results/
+          if-no-files-found: ignore

@@ -1,0 +1,12 @@
+/target/
+/dist/
+/runtime/
+/node_modules/
+/test-results/
+/playwright-report/
+*.exe
+*.pdb
+*.log
+__pycache__/
+/.venv/
+.write-check

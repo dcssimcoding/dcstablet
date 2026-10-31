@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>DCS Tablet</title>
+  <style>
+    /* Instrument layout and skin. Conditional rules retain their original cascade order. */
+
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+      background: #080c0b;
+      color: #d6e4dc;
+      --bezel: clamp(44px, 5vw, 58px);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: max(10px, env(safe-area-inset-top))
+        max(10px, env(safe-area-inset-right))
+        max(10px, env(safe-area-inset-bottom))
+        max(10px, env(safe-area-inset-left));
+      min-height: 100vh;
+    }
+    header,
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    header {
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 18px;
+      letter-spacing: 0.18em;
+      margin: 0;
+    }
+    small {
+      color: #91a599;
+    }
+    button {
+      font: inherit;
+      min-height: 44px;
+      padding: 8px 16px;
+      color: inherit;
+      background: #17251d;
+      border: 1px solid #405b48;
+      border-radius: 7px;
+      touch-action: manipulation;
+    }
+    button[aria-pressed="true"],
+    button.held {
+      background: #34583e;
+      border-color: #91eaaa;
+    }
+    button:disabled {
+      opacity: 0.45;
+    }
+    #connect {
+      background: #326242;
+    }
+    #message {
+      min-height: 24px;
+      color: #9cbaaa;
+      font-size: 14px;
+      margin: 10px 0;
+    }
+    #stage {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      width: min(100%, calc((100dvh - 190px) * 2 + 12px));
+      margin: auto;
+    }
+    #stage.single {
+      grid-template-columns: minmax(0, 1fr);
+      width: min(100%, calc(100dvh - 190px));
+    }
+    #stage[data-view="left"] .panel[data-side="right"],
+    #stage[data-view="right"] .panel[data-side="left"] {
+      display: none;
+    }
+    .panel {
+      aspect-ratio: 1;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: var(--bezel) minmax(0, 1fr) var(--bezel);
+      grid-template-rows: var(--bezel) minmax(0, 1fr) var(--bezel);
+      gap: 6px;
+      padding: 8px;
+    }
+    .edge {
+    }
+    .edge.top {
+      grid-area: 1/2;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .edge.bottom {
+      grid-area: 3/2;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .edge.left {
+      grid-area: 2/1;
+      grid-template-rows: repeat(5, minmax(0, 1fr));
+    }
+    .edge.right {
+      grid-area: 2/3;
+      grid-template-rows: repeat(5, minmax(0, 1fr));
+    }
+    .bezel {
+      min-width: 0;
+      min-height: 0;
+      padding: 0;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .screen {
+      grid-area: 2/2;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+      padding: 0;
+      min-height: 0;
+      touch-action: manipulation;
+    }
+    .screen-label {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      color: #789685;
+      font-size: 13px;
+      pointer-events: none;
+    }
+    #stage.playing .screen-label {
+      display: none;
+    }
+    .panel-name {
+      font-size: 10px;
+      text-align: center;
+      grid-area: 3/1;
+      pointer-events: none;
+    }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #789685;
+    }
+    #stage:fullscreen {
+      background: #080c0b;
+      width: min(100vw, calc(100vh * 2));
+      padding: 10px;
+      align-content: center;
+    }
+    #stage.single:fullscreen {
+      width: min(100vw, 100vh);
+      margin: auto;
+    }
+    button:focus-visible {
+      outline: 2px solid #a0f9ba;
+      outline-offset: 3px;
+    }
+
+    /* Painted instrument housing and square pushbuttons with circular centre caps. */
+    .panel {
+      position: relative;
+      isolation: isolate;
+      border: 1px solid #111719;
+      border-radius: 9% 9% 8% 8%;
+      background:
+        repeating-linear-gradient(112deg, #ffffff03 0 1px, transparent 1px 4px),
+        linear-gradient(
+          145deg,
+          #535c60 0%,
+          #333c40 5%,
+          #252d31 38%,
+          #30393e 73%,
+          #171e22 100%
+        );
+      box-shadow:
+        0 8px 15px #0009,
+        0 1px 1px #8d999c66,
+        inset 0 2px 2px #a4b1b27a,
+        inset 3px 0 4px #81919545,
+        inset -3px -3px 4px #080d11,
+        inset 0 0 0 5px #121a1e,
+        inset 0 0 0 7px #66727655;
+    }
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid #85909425;
+      border-radius: 8%;
+      pointer-events: none;
+      z-index: -1;
+      box-shadow:
+        inset 1px 1px 3px #0008,
+        0 1px 1px #a5b1b224;
+    }
+    .panel-name {
+      color: #c1c6bf88;
+      font: 9px/1.2 monospace;
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px #000;
+      align-self: end;
+      margin-bottom: 2px;
+    }
+    .edge {
+      gap: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .bezel {
+      position: relative;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      color: transparent;
+      font-size: 0;
+      outline-offset: -2px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bezel::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: clamp(26px, 3vw, 33px);
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 4px;
+      border: 1px solid #101a20;
+      background: linear-gradient(
+        135deg,
+        #9aa9af 0%,
+        #71838e 8%,
+        #344853 20%,
+        #4b6270 52%,
+        #263944 85%,
+        #17232b 100%
+      );
+      box-shadow:
+        0 2px 2px #000b,
+        0 -1px 1px #a2b3bd66,
+        inset 0 0 0 2px #657d8b,
+        inset 0 0 0 3px #1a2b35,
+        inset 0 -2px 2px #080f15;
+    }
+    .bezel::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: clamp(17px, 2vw, 22px);
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border: 1px solid #1b2b35;
+      border-radius: 38%;
+      background: radial-gradient(
+        ellipse at 38% 22%,
+        #80929b 0%,
+        #607782 40%,
+        #4a606d 70%,
+        #354a56 100%
+      );
+      box-shadow:
+        inset 0 1px 1px #b2c0c677,
+        inset 0 -2px 2px #20313e,
+        0 1px 1px #101c24;
+    }
+    .bezel.held,
+    .bezel[aria-pressed="true"] {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    .bezel.held::before,
+    .bezel[aria-pressed="true"]::before {
+      box-shadow:
+        0 1px 1px #000b,
+        inset 0 0 0 2px #4b616d,
+        inset 0 0 0 3px #18272f;
+    }
+    .bezel.held::after,
+    .bezel[aria-pressed="true"]::after {
+      transform: translate(-50%, calc(-50% + 1px));
+      background: radial-gradient(ellipse at 50% 65%, #526976, #354c59);
+      box-shadow:
+        inset 0 2px 4px #101c25,
+        inset 0 -1px 1px #83979f55;
+    }
+    .bezel:disabled {
+      opacity: 0.65;
+    }
+    .bezel:focus-visible {
+      outline: 2px solid #b4cdc9;
+      border-radius: 4px;
+    }
+    .screen {
+      border: 2px solid #090f11;
+      border-radius: 10%;
+      box-shadow:
+        0 -1px 1px #070c10,
+        0 1px 1px #8a979755,
+        inset 0 0 8px #000;
+    }
+    .fastener {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      z-index: 2;
+      border: 1px solid #151d22;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #9eabb1, #44555f 46%, #26353e 75%);
+      box-shadow:
+        0 1px 2px #000b,
+        inset 0 1px 1px #b1bdc366;
+      pointer-events: none;
+    }
+    .fastener::after {
+      content: "";
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      top: 4px;
+      height: 2px;
+      transform: rotate(-35deg);
+      background: #15212b;
+      box-shadow: 0 1px #9ba9b044;
+    }
+    .fastener.tl {
+      left: 5%;
+      top: 5%;
+    }
+    .fastener.tr {
+      right: 5%;
+      top: 5%;
+    }
+    .fastener.bl {
+      left: 5%;
+      bottom: 5%;
+    }
+    .fastener.br {
+      right: 5%;
+      bottom: 5%;
+    }
+
+    /* DCS MDI_IP1556A: align to the exported glass, not five equal edge cells. */
+    .edge {
+      display: block;
+    }
+    .edge.top,
+    .edge.bottom {
+      margin-inline: 2px;
+    }
+    .edge.left,
+    .edge.right {
+      margin-block: 2px;
+    }
+    .edge .bezel {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+    }
+    .edge.top .bezel,
+    .edge.bottom .bezel {
+      left: var(--anchor);
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .edge.left .bezel,
+    .edge.right .bezel {
+      top: var(--anchor);
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    :root {
+      --ddi-brightness: 2;
+    }
+
+    .brightness {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .brightness button {
+      padding: 8px 12px;
+      min-width: 44px;
+    }
+    .brightness output {
+      min-width: 42px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    #exit-focus {
+      display: none;
+    }
+    body.immersive {
+      height: 100dvh;
+      min-height: 0;
+      overflow: hidden;
+      padding: max(8px, env(safe-area-inset-top))
+        max(8px, env(safe-area-inset-right))
+        calc(76px + env(safe-area-inset-bottom))
+        max(8px, env(safe-area-inset-left));
+      display: grid;
+      place-items: center;
+    }
+    .immersive header,
+    .immersive #message,
+    .immersive footer,
+    .immersive #view-hint {
+      display: none;
+    }
+    .immersive #display-tools {
+      position: fixed;
+      bottom: max(8px, env(safe-area-inset-bottom));
+      left: 0;
+      right: 0;
+      justify-content: center;
+      gap: 8px;
+      background: #080c0bf2;
+      padding: 4px;
+      z-index: 5;
+    }
+    .immersive #exit-focus {
+      display: inline-block;
+    }
+    .immersive #stage {
+      width: min(
+        100%,
+        calc(
+          (
+              100dvh - 100px - env(safe-area-inset-top) -
+                env(safe-area-inset-bottom)
+            ) *
+            2 + 12px
+        )
+      );
+      max-width: none;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .immersive #stage.single {
+      width: min(
+        100%,
+        calc(
+          100dvh - 100px - env(safe-area-inset-top) -
+            env(safe-area-inset-bottom)
+        )
+      );
+      grid-template-columns: 1fr;
+    }
+
+    /* Keep decoded video dimensions out of grid sizing during zoom/fullscreen changes. */
+    #stage {
+      min-height: 0;
+      align-items: start;
+      grid-auto-rows: max-content;
+    }
+    .panel {
+      width: 100%;
+      height: auto;
+      min-height: 0;
+      align-self: start;
+    }
+    .screen {
+      display: block;
+      min-width: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      contain: layout paint;
+    }
+
+    .bezel {
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    #source-video {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      opacity: 0.01;
+      pointer-events: none;
+    }
+    .screen {
+      filter: brightness(var(--ddi-brightness));
+    }
+    .screen canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+    #rotate-notice {
+      display: none;
+    }
+    #build-info {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #91a599;
+    }
+    @media (orientation: portrait) {
+      #rotate-notice {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: grid;
+        place-content: center;
+        text-align: center;
+        padding: 24px;
+        background: #080c0b;
+      }
+      #rotate-notice h2 {
+        font-size: 24px;
+      }
+      body {
+        overflow: hidden;
+      }
+    }
+  </style>
+  <aside id="rotate-notice" role="status">
+    <h2>DCS Tablet</h2>
+    <p>Rotate your tablet to landscape.</p>
+  </aside>
+  <header>
+    <div>
+      <h1>DCS TABLET</h1>
+      <small id="mode">Local display link</small
+      ><small id="build-info">Loading version…</small>
+    </div>
+    <nav>
+      <button id="connect">Connect</button
+      ><button id="disconnect" disabled>Disconnect</button
+      ><button id="fullscreen">Full screen</button>
+    </nav>
+  </header>
+  <nav id="display-tools" aria-label="Display selection">
+    <button data-view="both" aria-pressed="true">Both DDIs</button
+    ><span class="brightness"
+      ><span>DDI brightness</span
+      ><button id="brightness-down" aria-label="Decrease DDI brightness">
+        −</button
+      ><output id="brightness-value" aria-live="polite">200%</output
+      ><button id="brightness-up" aria-label="Increase DDI brightness">
+        +
+      </button></span
+    ><button id="exit-focus">Exit full screen</button
+    ><span id="view-hint">Tap a display to enlarge it</span>
+  </nav>
+  <p id="message" role="status" aria-live="polite">
+    Connect to start the display feed.
+  </p>
+  <video
+    id="source-video"
+    autoplay
+    muted
+    playsinline
+    aria-hidden="true"
+  ></video>
+  <main id="stage" data-view="both" aria-label="DDI touch panels">
+    <section class="panel" data-side="left" aria-label="Left DDI">
+      <span class="fastener tl" aria-hidden="true"></span
+      ><span class="fastener tr" aria-hidden="true"></span
+      ><span class="fastener bl" aria-hidden="true"></span
+      ><span class="fastener br" aria-hidden="true"></span>
+      <div class="edge top"></div>
+      <div class="edge left"></div>
+      <button class="screen" data-zoom="left" aria-label="Enlarge left DDI">
+        <canvas width="512" height="512" aria-label="Live left DDI"></canvas
+        ><span class="screen-label">LEFT DDI<br />WAITING FOR FEED</span>
+      </button>
+      <div class="edge right"></div>
+      <div class="edge bottom"></div>
+      <span class="panel-name">L DDI</span>
+    </section>
+    <section class="panel" data-side="right" aria-label="Right DDI">
+      <span class="fastener tl" aria-hidden="true"></span
+      ><span class="fastener tr" aria-hidden="true"></span
+      ><span class="fastener bl" aria-hidden="true"></span
+      ><span class="fastener br" aria-hidden="true"></span>
+      <div class="edge top"></div>
+      <div class="edge left"></div>
+      <button class="screen" data-zoom="right" aria-label="Enlarge right DDI">
+        <canvas width="512" height="512" aria-label="Live right DDI"></canvas
+        ><span class="screen-label">RIGHT DDI<br />WAITING FOR FEED</span>
+      </button>
+      <div class="edge right"></div>
+      <div class="edge bottom"></div>
+      <span class="panel-name">R DDI</span>
+    </section>
+  </main>
+  <footer>
+    <span>F/A-18C · <span id="control-status">Controls unavailable</span></span
+    ><span id="source-status" role="status"></span
+    ><span id="stats">H.264 / WebRTC / LAN</span>
+  </footer>
+  <script>
+    "use strict";
+    const $ = (s) => document.querySelector(s),
+      video = $("#source-video"),
+      videos = [video],
+      stage = $("#stage");
+    let renderHandle = null,
+      renderGeneration = 0;
+    const displaySurfaces = [
+      ...document.querySelectorAll(".screen canvas"),
+    ].map((canvas, index) => ({
+      canvas,
+      index,
+      ctx: canvas.getContext("2d", { alpha: false }),
+    }));
+    let pc = null,
+      controller = null,
+      statsTimer,
+      wakeLock,
+      connectionIdentity = null;
+    function drawDDIs() {
+      if (video.readyState < 2 || !video.videoWidth || !video.videoHeight)
+        return;
+      const width = video.videoWidth / 2,
+        height = video.videoHeight;
+      for (const { canvas, index, ctx } of displaySurfaces) {
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        ctx.drawImage(
+          video,
+          index * width,
+          0,
+          width,
+          height,
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+      }
+    }
+    function stopRenderer() {
+      renderGeneration++;
+      if (renderHandle !== null) {
+        if (video.cancelVideoFrameCallback)
+          video.cancelVideoFrameCallback(renderHandle);
+        else cancelAnimationFrame(renderHandle);
+        renderHandle = null;
+      }
+    }
+    function startRenderer() {
+      stopRenderer();
+      const generation = renderGeneration;
+      function frame() {
+        if (generation !== renderGeneration || !pc) return;
+        drawDDIs();
+        renderHandle = video.requestVideoFrameCallback
+          ? video.requestVideoFrameCallback(frame)
+          : requestAnimationFrame(frame);
+      }
+      frame();
+    }
+    function message(text) {
+      $("#message").textContent = text;
+    }
+    async function releaseWake() {
+      if (wakeLock) {
+        await wakeLock.release().catch(() => {});
+        wakeLock = null;
+      }
+    }
+    let connectionGeneration = 0,
+      statusRequest = null;
+    function invalidateStatus() {
+      statusRequest?.controller.abort();
+      statusRequest = null;
+    }
+    function stop(text = "Disconnected.") {
+      connectionGeneration++;
+      invalidateStatus();
+      controller?.abort();
+      controller = null;
+      connectionIdentity = null;
+      const old = pc;
+      pc = null;
+      old?.close();
+      clearInterval(statsTimer);
+      stopRenderer();
+      releaseButtons(true);
+      resetControlPump();
+      controlSession = null;
+      controlRevision = 0;
+      controlReady = false;
+      document.querySelectorAll(".bezel").forEach((b) => (b.disabled = true));
+      videos.forEach((v) => (v.srcObject = null));
+      stage.classList.remove("playing");
+      $("#connect").disabled = false;
+      $("#disconnect").disabled = true;
+      releaseWake();
+      message(text);
+    }
+    async function keepAwake() {
+      if ("wakeLock" in navigator && document.visibilityState === "visible") {
+        try {
+          wakeLock = await navigator.wakeLock.request("screen");
+        } catch {}
+      }
+    }
+    async function gather(peer, signal) {
+      if (peer.iceGatheringState === "complete") return;
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(
+          () => done(new Error("Network candidate gathering timed out.")),
+          10000,
+        );
+        const check = () => {
+          if (peer.iceGatheringState === "complete") done();
+        };
+        const abort = () => done(new DOMException("Cancelled", "AbortError"));
+        function done(error) {
+          clearTimeout(timeout);
+          peer.removeEventListener("icegatheringstatechange", check);
+          signal.removeEventListener("abort", abort);
+          error ? reject(error) : resolve();
+        }
+        peer.addEventListener("icegatheringstatechange", check);
+        signal.addEventListener("abort", abort, { once: true });
+        check();
+      });
+    }
+    $("#connect").onclick = async () => {
+      if (window.matchMedia?.("(orientation: portrait)").matches) {
+        message("Rotate your tablet to landscape.");
+        return;
+      }
+      if (!window.RTCPeerConnection) {
+        message("This browser does not support WebRTC. Update iPadOS/Safari.");
+        return;
+      }
+      connectionGeneration++;
+      invalidateStatus();
+      $("#connect").disabled = true;
+      $("#disconnect").disabled = false;
+      message("Connecting…");
+      const peer = new RTCPeerConnection({ iceServers: [] });
+      pc = peer;
+      controller = new AbortController();
+      const signal = controller.signal;
+      const timeout = setTimeout(() => {
+        if (pc === peer)
+          stop(
+            "Connection timed out. Check Windows firewall and Wi-Fi client isolation.",
+          );
+      }, 20000);
+      peer.addTransceiver("video", { direction: "recvonly" });
+      peer.ontrack = async (event) => {
+        if (pc !== peer) return;
+        const stream = new MediaStream([event.track]);
+        videos.forEach((v) => (v.srcObject = stream));
+        try {
+          await video.play();
+          if (pc !== peer) return;
+          startRenderer();
+          stage.classList.add("playing");
+        } catch {
+          if (pc === peer) {
+            clearTimeout(timeout);
+            stop("Playback could not start. Tap Connect to retry.");
+          }
+        }
+      };
+      peer.onconnectionstatechange = () => {
+        if (pc !== peer) return;
+        if (peer.connectionState === "connected") {
+          clearTimeout(timeout);
+          message("Live · tap a display to enlarge it.");
+          keepAwake();
+        }
+        if (
+          ["failed", "disconnected", "closed"].includes(peer.connectionState)
+        ) {
+          clearTimeout(timeout);
+          stop("Connection lost. Tap Connect to reconnect.");
+        }
+      };
+      try {
+        const status = await updateStatus();
+        if (pc !== peer) return;
+        if (status)
+          connectionIdentity = `${status.backend}:${status.process_id}:${status.build_id || ""}`;
+        await peer.setLocalDescription(await peer.createOffer());
+        await gather(peer, signal);
+        const response = await fetch("/offer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(peer.localDescription),
+          signal,
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const answer = await response.json();
+        if (pc !== peer) return;
+        await peer.setRemoteDescription(answer);
+        await updateStatus();
+        statsTimer = setInterval(async () => {
+          if (pc !== peer) return;
+          try {
+            for (const report of (await peer.getStats()).values()) {
+              if (report.type === "inbound-rtp" && report.kind === "video")
+                $("#stats").textContent =
+                  `${report.frameWidth || "—"} × ${report.frameHeight || "—"} · ${report.framesPerSecond || "—"} fps · H.264`;
+            }
+          } catch {}
+        }, 1500);
+      } catch (error) {
+        clearTimeout(timeout);
+        if (pc === peer) stop(error.message);
+      }
+    };
+    $("#disconnect").onclick = () => stop();
+    function selectView(view) {
+      releaseButtons();
+      stage.dataset.view = view;
+      stage.classList.toggle("single", view !== "both");
+      document
+        .querySelectorAll("[data-view]")
+        .forEach((b) =>
+          b.setAttribute("aria-pressed", String(b.dataset.view === view)),
+        );
+      drawDDIs();
+      $("#view-hint").textContent =
+        view === "both"
+          ? "Tap a display to enlarge it"
+          : "Tap Both DDIs to return";
+    }
+    document
+      .querySelectorAll("[data-view]")
+      .forEach(
+        (button) => (button.onclick = () => selectView(button.dataset.view)),
+      );
+    document
+      .querySelectorAll("[data-zoom]")
+      .forEach(
+        (button) => (button.onclick = () => selectView(button.dataset.zoom)),
+      );
+    let brightness = 2,
+      immersive = false,
+      nativeFullscreen = false;
+    try {
+      const saved = Number(localStorage.getItem("dcs-tablet-brightness"));
+      if (saved >= 0.5 && saved <= 4) brightness = saved;
+    } catch {}
+    function setBrightness(value) {
+      brightness = Math.max(0.5, Math.min(4, value));
+      document.documentElement.style.setProperty(
+        "--ddi-brightness",
+        brightness,
+      );
+      $("#brightness-value").textContent = Math.round(brightness * 100) + "%";
+      $("#brightness-down").disabled = brightness <= 0.5;
+      $("#brightness-up").disabled = brightness >= 4;
+      try {
+        localStorage.setItem("dcs-tablet-brightness", brightness);
+      } catch {}
+    }
+    setBrightness(brightness);
+    $("#brightness-down").onclick = () => setBrightness(brightness - 0.25);
+    $("#brightness-up").onclick = () => setBrightness(brightness + 0.25);
+    function setImmersive(value) {
+      releaseButtons();
+      immersive = value;
+      document.body.classList.toggle("immersive", value);
+      drawDDIs();
+      $("#fullscreen").textContent = value ? "Exit full screen" : "Full screen";
+    }
+    async function toggleFullscreen() {
+      if (immersive) {
+        setImmersive(false);
+        nativeFullscreen = false;
+        if (document.fullscreenElement)
+          await document.exitFullscreen().catch(() => {});
+        return;
+      }
+      setImmersive(true);
+      const standalone =
+        navigator.standalone === true ||
+        window.matchMedia?.("(display-mode: standalone)").matches;
+      if (!standalone && document.documentElement.requestFullscreen) {
+        try {
+          await document.documentElement.requestFullscreen();
+          nativeFullscreen = !!document.fullscreenElement;
+        } catch {
+          /* The page layout still fills the app viewport. */
+        }
+      }
+    }
+    $("#fullscreen").onclick = toggleFullscreen;
+    $("#exit-focus").onclick = toggleFullscreen;
+    document.addEventListener("fullscreenchange", () => {
+      if (nativeFullscreen && !document.fullscreenElement) {
+        nativeFullscreen = false;
+        setImmersive(false);
+      }
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") releaseButtons(true);
+      if (
+        document.visibilityState === "visible" &&
+        pc?.connectionState === "connected"
+      )
+        keepAwake();
+    });
+    window.addEventListener("pagehide", () => stop());
+    // One status request per connection generation. Old responses must never mutate a new peer.
+    function updateStatus() {
+      if (statusRequest) return statusRequest.promise;
+      const generation = connectionGeneration,
+        controller = new AbortController();
+      const request = { controller, promise: null };
+      const timer = setTimeout(() => controller.abort(), 5000);
+      request.promise = fetch("/status", { signal: controller.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error("Status unavailable");
+          return r.json();
+        })
+        .then((s) => {
+          if (generation !== connectionGeneration) return null;
+          updateControls(s);
+          $("#source-status").textContent =
+            s.capture_source?.state === "stale"
+              ? "Video source has not updated recently."
+              : "";
+          $("#build-info").textContent =
+            `DCS Tablet v${s.version} · Built ${s.build_date || new Date(s.built_unix_ms).toISOString().slice(0, 10)} UTC`;
+          $("#mode").textContent =
+            ` ${s.mode === "demo" ? "DEMO · synthetic test pattern" : "DESKTOP CAPTURE"} · ${s.size}px per DDI · target ${s.fps} fps`;
+          if (
+            pc &&
+            connectionIdentity &&
+            connectionIdentity !==
+              `${s.backend}:${s.process_id}:${s.build_id || ""}`
+          )
+            stop("Streamer restarted or changed. Tap Connect to reconnect.");
+          else if (
+            pc &&
+            pc.connectionState === "connected" &&
+            s.backend === "rust" &&
+            s.last_error
+          )
+            stop(`${s.last_error}. Tap Connect to retry.`);
+          return s;
+        })
+        .catch(() => {
+          if (generation === connectionGeneration && !pc)
+            message("PC service unavailable.");
+          return null;
+        })
+        .finally(() => {
+          clearTimeout(timer);
+          if (statusRequest === request) statusRequest = null;
+        });
+      statusRequest = request;
+      return request.promise;
+    }
+    let controlSession = null,
+      controlReady = false,
+      controlRevision = 0;
+    let controlPump = {
+      queue: [],
+      sending: false,
+      controller: new AbortController(),
+    };
+    function resetControlPump() {
+      controlPump.controller.abort();
+      controlPump = {
+        queue: [],
+        sending: false,
+        controller: new AbortController(),
+      };
+    }
+    const heldButtons = new Map();
+    function updateControls(status) {
+      const c = status.controls;
+      if (controlSession !== c?.session) {
+        releaseButtons(true);
+        controlSession = c?.session ?? null;
+        controlRevision = 0;
+        resetControlPump();
+      }
+      const ready =
+        status.backend === "rust" &&
+        !!c?.ready &&
+        pc?.connectionState === "connected";
+      if (!ready && controlReady) releaseButtons(true);
+      controlReady = ready;
+      document.querySelectorAll(".bezel").forEach((b) => (b.disabled = !ready));
+      $("#control-status").textContent = ready
+        ? "Touch controls ready"
+        : status.mode === "demo"
+          ? "Demo · controls disabled"
+          : pc?.connectionState !== "connected"
+            ? "Connect the display for touch controls"
+            : c?.bridge_connected === false
+              ? "DCS controls unavailable · waiting for a reply"
+              : "Start a Hornet mission for touch controls";
+    }
+    function masks() {
+      const result = { left: 0, right: 0 };
+      for (const b of heldButtons.values())
+        result[b.dataset.side] |= 1 << (Number(b.dataset.button) - 1);
+      return result;
+    }
+    function queueControls(releasing = false) {
+      if (controlSession === null || (!controlReady && !releasing)) return;
+      const snapshot = {
+        session: controlSession,
+        revision: ++controlRevision,
+        ...masks(),
+      };
+      if (controlPump.queue.length >= 64) {
+        releaseButtons(true);
+        message("Touch queue full. Release the buttons and try again.");
+        return;
+      }
+      controlPump.queue.push(snapshot);
+      pumpControls();
+    }
+    async function pumpControls() {
+      const pump = controlPump;
+      if (pump.sending) return;
+      pump.sending = true;
+      try {
+        while (pump === controlPump && pump.queue.length) {
+          const snapshot = pump.queue.shift();
+          // A per-request timeout and session cancellation share this controller without requiring AbortSignal.any.
+          const timer = setTimeout(() => pump.controller.abort(), 1500);
+          try {
+            const response = await fetch("/controls", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(snapshot),
+              signal: pump.controller.signal,
+            });
+            if (pump !== controlPump) return;
+            if (!response.ok) throw new Error(await response.text());
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+      } catch (error) {
+        if (pump !== controlPump) return;
+        pump.queue = [];
+        releaseButtons(true);
+        resetControlPump();
+        controlReady = false;
+        document.querySelectorAll(".bezel").forEach((b) => (b.disabled = true));
+        message("Controls unavailable: " + error.message);
+      } finally {
+        pump.sending = false;
+      }
+    }
+    function releaseButtons(beacon = false, send = true) {
+      const had = heldButtons.size > 0;
+      heldButtons.forEach((b) => {
+        b.classList.remove("held");
+        b.setAttribute("aria-pressed", "false");
+      });
+      heldButtons.clear();
+      if (!had || !send || controlSession === null) return;
+      if (beacon) {
+        controlPump.queue = [];
+        const data = JSON.stringify({
+          session: controlSession,
+          revision: ++controlRevision,
+          left: 0,
+          right: 0,
+        });
+        // Text is accepted as JSON by the local endpoint; Beacon can run during page hiding.
+        navigator.sendBeacon?.(
+          "/controls",
+          new Blob([data], { type: "text/plain" }),
+        );
+      } else queueControls(true);
+    }
+    const edgeNumbers = {
+      top: [6, 7, 8, 9, 10],
+      right: [11, 12, 13, 14, 15],
+      bottom: [20, 19, 18, 17, 16],
+      left: [5, 4, 3, 2, 1],
+    };
+    for (const panel of document.querySelectorAll(".panel")) {
+      for (const [edge, numbers] of Object.entries(edgeNumbers)) {
+        for (const number of numbers) {
+          const button = document.createElement("button");
+          button.className = "bezel";
+          button.textContent = number;
+          button.dataset.side = panel.dataset.side;
+          button.dataset.button = String(number);
+          button.disabled = true;
+          // PB positions in DI; the exported glass spans +/-0.06642m horizontally,
+          // +/-0.06637m vertically. One DI is 0.0048 inches (0.00012192 metres).
+          const slot = numbers.indexOf(number),
+            horizontal = edge === "top" || edge === "bottom";
+          const position = horizontal
+            ? 0.5 + ((-336 + 169 * slot) * 0.00012192) / 0.13284
+            : 0.5 - ((307 - 167 * slot) * 0.00012192) / 0.13274;
+          button.style.setProperty("--anchor", `${position * 100}%`);
+          button.setAttribute(
+            "aria-label",
+            `${panel.dataset.side} DDI pushbutton ${number}`,
+          );
+          button.setAttribute("aria-pressed", "false");
+          button.oncontextmenu = (e) => e.preventDefault();
+          button.onpointerdown = (e) => {
+            if (!controlReady || e.button !== 0 || heldButtons.has(e.pointerId))
+              return;
+            e.preventDefault();
+            button.setPointerCapture(e.pointerId);
+            heldButtons.set(e.pointerId, button);
+            button.classList.add("held");
+            button.setAttribute("aria-pressed", "true");
+            queueControls();
+          };
+          const up = (e) => {
+            if (!heldButtons.has(e.pointerId)) return;
+            e.preventDefault();
+            heldButtons.delete(e.pointerId);
+            if (![...heldButtons.values()].includes(button)) {
+              button.classList.remove("held");
+              button.setAttribute("aria-pressed", "false");
+            }
+            queueControls(true);
+          };
+          button.onpointerup = up;
+          button.onpointercancel = up;
+          button.onlostpointercapture = up;
+          // Keyboard activation is useful for accessibility and desktop checks.
+          button.onkeydown = (e) => {
+            if (controlReady && !e.repeat && [" ", "Enter"].includes(e.key)) {
+              e.preventDefault();
+              heldButtons.set("key-" + panel.dataset.side + number, button);
+              button.classList.add("held");
+              button.setAttribute("aria-pressed", "true");
+              queueControls();
+            }
+          };
+          button.onkeyup = (e) => {
+            if ([" ", "Enter"].includes(e.key)) {
+              e.preventDefault();
+              heldButtons.delete("key-" + panel.dataset.side + number);
+              button.classList.remove("held");
+              button.setAttribute("aria-pressed", "false");
+              queueControls(true);
+            }
+          };
+          panel.querySelector(".edge." + edge).append(button);
+        }
+      }
+    }
+    window.addEventListener("blur", () => releaseButtons(true));
+    setInterval(() => {
+      if (heldButtons.size) queueControls();
+    }, 150);
+    window
+      .matchMedia?.("(orientation: portrait)")
+      .addEventListener("change", (event) => {
+        if (event.matches) releaseButtons(true);
+      });
+    updateStatus();
+    setInterval(() => {
+      if (document.visibilityState === "visible") updateStatus();
+    }, 2000);
+  </script>
+</html>
